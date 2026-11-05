@@ -4,6 +4,7 @@ export default {
     overview: 'Overview',
     inventory: 'Inventory',
     orders: 'Orders',
+    restocking: 'Restocking',
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
     companyName: 'Catalyst Components',
@@ -106,6 +107,10 @@ export default {
     title: 'Orders',
     description: 'View and manage customer orders',
     allOrders: 'All Orders',
+    submittedOrders: 'Submitted Orders',
+    submittedOrdersDescription: 'Restocking orders submitted from the Restocking tab',
+    noSubmittedOrders: 'No restocking orders submitted yet',
+    leadTime: 'Lead Time',
     totalOrders: 'Total Orders',
     totalRevenue: 'Total Revenue',
     avgOrderValue: 'Avg Order Value',
@@ -186,6 +191,39 @@ export default {
       trend: 'Trend',
       period: 'Period'
     }
+  },
+
+  // Restocking
+  restocking: {
+    title: 'Restocking',
+    description: 'Set your budget and restock the items most likely to be in demand.',
+    budget: 'Available Budget',
+    warehouse: 'Deliver To (Warehouse)',
+    days: 'days',
+    recommended: 'Recommended',
+    recommendedItems: 'Recommended Restock Items',
+    recommendedDescription: 'Items ranked by demand trend and the forecasted shortfall. Select what fits your budget.',
+    sku: 'SKU',
+    itemName: 'Item Name',
+    trend: 'Trend',
+    forecastGap: 'Forecast Gap',
+    recommendedQty: 'Recommended Qty',
+    unitCost: 'Unit Cost',
+    subtotal: 'Subtotal',
+    select: 'Select',
+    totalCost: 'Total Cost',
+    selectedItems: '{count} selected',
+    remainingBudget: 'Remaining',
+    overBudget: 'Over budget',
+    noItems: 'No items to recommend within the current forecast.',
+    nothingSelected: 'Select one or more items to place an order.',
+    placeOrder: 'Place Order',
+    placing: 'Placing...',
+    successTitle: 'Restock order submitted',
+    successMessage: '{order} was submitted to {warehouse} and now appears under Orders.',
+    viewOrders: 'View Orders',
+    close: 'Close',
+    error: 'Failed to place order: '
   },
 
   // Filters

@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
@@ -89,6 +91,37 @@ class DemandForecast(BaseModel):
     forecasted_demand: int
     trend: str
     period: str
+    # Unit cost added for the Restocking feature so budget-driven
+    # recommendations can price each item (forecast SKUs otherwise have no cost).
+    unit_cost: float
+
+
+class RestockItem(BaseModel):
+    sku: str
+    name: str
+    quantity: int
+    unit_cost: float
+
+
+class RestockOrderRequest(BaseModel):
+    """A restocking order chosen by the Restocking view based on the budget."""
+    items: List[RestockItem]
+    warehouse: str
+
+
+class RestockOrder(BaseModel):
+    id: str
+    order_number: str
+    customer: str
+    items: List[RestockItem]
+    status: str
+    warehouse: str
+    order_date: str
+    # Derived delivery lead time (days) for the chosen warehouse.
+    lead_time_days: int
+    expected_delivery: str
+    total_value: float
+    is_restock: bool = True
 
 class BacklogItem(BaseModel):
     id: str
@@ -303,6 +336,78 @@ def get_monthly_trends():
     result = list(months.values())
     result.sort(key=lambda x: x['month'])
     return result
+
+
+def _compute_lead_time(warehouse: str) -> int:
+    """Derive a warehouse's delivery lead time (days) from historical orders.
+
+    Lead time is the average gap between order_date and expected_delivery for
+    that warehouse's orders. Using the observed average keeps the figure
+    realistic and consistent with the existing orders data. Falls back to a
+    10-day default if a warehouse has no order history.
+    """
+    gaps = []
+    for order in orders:
+        if order.get('warehouse') != warehouse:
+            continue
+        try:
+            order_dt = datetime.fromisoformat(order['order_date'])
+            expected_dt = datetime.fromisoformat(order['expected_delivery'])
+            gaps.append((expected_dt - order_dt).days)
+        except (KeyError, ValueError, TypeError):
+            continue
+    if not gaps:
+        return 10
+    return round(sum(gaps) / len(gaps))
+
+
+# Submitted restocking orders. Kept in memory (matching the demo's all-in-memory
+# data model) and intentionally separate from the `orders` dataset so they do not
+# skew the Dashboard/Reports KPIs that are computed from `orders`.
+restock_orders: list = []
+
+
+@app.get("/api/restocking/lead-times")
+def get_restocking_lead_times():
+    """Average delivery lead time (days) per warehouse, for the Restocking view."""
+    warehouses = sorted({o.get('warehouse') for o in orders if o.get('warehouse')})
+    return {warehouse: _compute_lead_time(warehouse) for warehouse in warehouses}
+
+
+@app.get("/api/restocking/orders", response_model=List[RestockOrder])
+def get_restock_orders():
+    """Get all submitted restocking orders (most recent first)."""
+    # Items are RestockOrder models, so sort on the attribute (not dict access).
+    return sorted(restock_orders, key=lambda o: o.order_date, reverse=True)
+
+
+@app.post("/api/restocking/orders", response_model=RestockOrder, status_code=201)
+def create_restock_order(request: RestockOrderRequest):
+    """Submit a restocking order and return it with its computed lead time."""
+    if not request.items:
+        raise HTTPException(status_code=400, detail="Order must contain at least one item")
+
+    # Recompute lead time server-side so the value is authoritative, not client-supplied.
+    lead_time_days = _compute_lead_time(request.warehouse)
+    order_date = datetime.now()
+    expected_delivery = order_date + timedelta(days=lead_time_days)
+    total_value = round(sum(item.quantity * item.unit_cost for item in request.items), 2)
+
+    order = RestockOrder(
+        id=str(uuid.uuid4()),
+        order_number=f"RESTOCK-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+        customer="Restocking (Internal)",
+        items=request.items,
+        status="Processing",
+        warehouse=request.warehouse,
+        order_date=order_date.isoformat(),
+        lead_time_days=lead_time_days,
+        expected_delivery=expected_delivery.isoformat(),
+        total_value=total_value,
+    )
+
+    restock_orders.append(order)
+    return order
 
 if __name__ == "__main__":
     import uvicorn

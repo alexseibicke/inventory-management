@@ -4,6 +4,7 @@ export default {
     overview: '概要',
     inventory: '在庫',
     orders: '注文',
+    restocking: '仕入れ',
     finance: '財務',
     demandForecast: '需要予測',
     companyName: '触媒コンポーネンツ',
@@ -106,6 +107,10 @@ export default {
     title: '注文',
     description: '顧客注文の表示と管理',
     allOrders: 'すべての注文',
+    submittedOrders: '提出済みの注文',
+    submittedOrdersDescription: '仕入れタブから提出された補給注文',
+    noSubmittedOrders: 'まだ補給注文は提出されていません',
+    leadTime: 'リードタイム',
     totalOrders: '総注文数',
     totalRevenue: '総収益',
     avgOrderValue: '平均注文額',
@@ -186,6 +191,39 @@ export default {
       trend: 'トレンド',
       period: '期間'
     }
+  },
+
+  // Restocking
+  restocking: {
+    title: '仕入れ',
+    description: '予算を設定し、需要が見込まれる品目を補給します。',
+    budget: '利用可能予算',
+    warehouse: '納品先（倉庫）',
+    days: '日',
+    recommended: '推奨',
+    recommendedItems: '推奨する補給品',
+    recommendedDescription: '需要のトレンドと予測不足量に基づいてランク付けされた品目です。予算に合うものを選択してください。',
+    sku: 'SKU',
+    itemName: '品目名',
+    trend: 'トレンド',
+    forecastGap: '予測不足',
+    recommendedQty: '推奨数量',
+    unitCost: '単価',
+    subtotal: '小計',
+    select: '選択',
+    totalCost: '合計金額',
+    selectedItems: '{count}件選択中',
+    remainingBudget: '残額',
+    overBudget: '予算超過',
+    noItems: '現在の予測で推奨できる品目がありません。',
+    nothingSelected: '注文を確定するには1つ以上の品目を選択してください。',
+    placeOrder: '注文を確定',
+    placing: '送信中...',
+    successTitle: '補給注文が提出されました',
+    successMessage: '{order}が{warehouse}に提出され、注文セクションに表示されます。',
+    viewOrders: '注文を見る',
+    close: '閉じる',
+    error: '注文の確定に失敗しました: '
   },
 
   // Filters

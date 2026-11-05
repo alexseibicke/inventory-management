@@ -29,6 +29,44 @@
 
       <div class="card">
         <div class="card-header">
+          <div>
+            <h3 class="card-title">{{ t('orders.submittedOrders') }} ({{ restockOrders.length }})</h3>
+            <p class="section-desc">{{ t('orders.submittedOrdersDescription') }}</p>
+          </div>
+        </div>
+        <div v-if="restockOrders.length === 0" class="empty">{{ t('orders.noSubmittedOrders') }}</div>
+        <div v-else class="table-container">
+          <table class="restock-orders-table">
+            <thead>
+              <tr>
+                <th>{{ t('orders.table.orderNumber') }}</th>
+                <th>{{ t('inventory.table.warehouse') }}</th>
+                <th>{{ t('orders.table.status') }}</th>
+                <th>{{ t('orders.table.orderDate') }}</th>
+                <th>{{ t('orders.leadTime') }}</th>
+                <th>{{ t('orders.table.expectedDelivery') }}</th>
+                <th class="col-value">{{ t('orders.table.totalValue') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in restockOrders" :key="order.id">
+                <td><strong>{{ order.order_number }}</strong></td>
+                <td>{{ translateWarehouse(order.warehouse) }}</td>
+                <td>
+                  <span class="badge warning">{{ t(`status.${order.status.toLowerCase()}`) }}</span>
+                </td>
+                <td>{{ formatDate(order.order_date) }}</td>
+                <td><strong>{{ order.lead_time_days }} {{ t('restocking.days') }}</strong></td>
+                <td>{{ formatDate(order.expected_delivery) }}</td>
+                <td class="col-value"><strong>{{ currencySymbol }}{{ order.total_value.toLocaleString() }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
           <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
         </div>
         <div class="table-container">
@@ -87,7 +125,7 @@ import { useI18n } from '../composables/useI18n'
 export default {
   name: 'Orders',
   setup() {
-    const { t, currentCurrency, translateProductName, translateCustomerName } = useI18n()
+    const { t, currentCurrency, translateProductName, translateCustomerName, translateWarehouse } = useI18n()
 
     const currencySymbol = computed(() => {
       return currentCurrency.value === 'JPY' ? '¥' : '$'
@@ -95,6 +133,7 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
+    const restockOrders = ref([])
 
     // Use shared filters
     const {
@@ -121,6 +160,17 @@ export default {
         error.value = 'Failed to load orders: ' + err.message
       } finally {
         loading.value = false
+      }
+    }
+
+    // Load submitted restocking orders (a separate dataset from customer orders,
+    // surfaced in its own "Submitted Orders" section).
+    const loadRestockOrders = async () => {
+      try {
+        const data = await api.getRestockOrders()
+        restockOrders.value = data || []
+      } catch (err) {
+        console.error('Failed to load restock orders:', err)
       }
     }
 
@@ -153,25 +203,47 @@ export default {
       })
     }
 
-    onMounted(loadOrders)
+    onMounted(() => {
+      loadOrders()
+      loadRestockOrders()
+    })
 
     return {
       t,
       loading,
       error,
       orders,
+      restockOrders,
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
       currencySymbol,
       translateProductName,
-      translateCustomerName
+      translateCustomerName,
+      translateWarehouse
     }
   }
 }
 </script>
 
 <style scoped>
+.section-desc {
+  font-size: 0.813rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 0.938rem;
+}
+
+.restock-orders-table {
+  width: 100%;
+}
+
 /* Fixed table layout to prevent column shifting */
 .orders-table {
   table-layout: fixed;
